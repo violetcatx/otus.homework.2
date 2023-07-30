@@ -1,37 +1,53 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <array>
+#include <regex>
 
 /**
  * @brief Структура для удобного хранения и сравнения IP адресов 
  * 
  */
-struct IPAddress {
-    int byte1;
-    int byte2;
-    int byte3;
-    int byte4;
-
-    /**
-     * @brief Перегруженный оператор сравнения
-     * 
-     * @param other IP адрес для сравнения
-     * @return true 
-     * @return false 
-     */
-    bool operator>(const IPAddress& other) const {
-        if (byte1 != other.byte1) {
-            return byte1 > other.byte1;
+struct IPAddress 
+{
+    std::array<int, 4> content_;    
+    
+    bool operator>(const IPAddress& other) const 
+    {
+        for(auto i=0; i < static_cast<int>(this->content_.size()); i++)
+        {
+            auto ths = this->content_.at(i);
+            auto oth = other.content_.at(i);
+            if(ths != oth) 
+            {
+                return ths > oth;
+            }
         }
-        if (byte2 != other.byte2) {
-            return byte2 > other.byte2;
-        }
-        if (byte3 != other.byte3) {
-            return byte3 > other.byte3;
-        }
-        return byte4 > other.byte4;
+        return false;
     }
 };
+
+/**
+ * @brief Простенький глуповатый "на скорую руку)" кастомный сплит 
+ * 
+ */
+std::vector<std::string> split(std::string str, char separator) 
+{
+    std::vector<std::string> strings;
+    int startIndex = 0, endIndex = 0;
+    for (auto i = 0; i <= static_cast<int>(str.size()); i++) 
+    {
+        if (str[i] == separator || i == static_cast<int>(str.size())) 
+        {
+            endIndex = i;
+            std::string temp;
+            temp.append(str, startIndex, endIndex - startIndex);
+            strings.push_back(temp);
+            startIndex = endIndex + 1;
+        }
+    }
+    return strings;
+}
 
 /**
  * @brief Получение данных из стандартного ввода
@@ -43,7 +59,32 @@ std::vector<IPAddress> readIPAddresses() {
     std::string line;
     while (std::getline(std::cin, line)) {
         IPAddress ipAddress;
-        sscanf(line.c_str(), "%d.%d.%d.%d", &ipAddress.byte1, &ipAddress.byte2, &ipAddress.byte3, &ipAddress.byte4);
+        
+        auto fullCounter = 0;
+        auto splittedLine = split(line, '.');
+        
+        for(auto item : splittedLine)
+        {
+            if(fullCounter < 4)
+            {
+                try
+                {
+                    ipAddress.content_[fullCounter] = (std::stoi(item));
+                    fullCounter++;
+                }
+                catch (const std::invalid_argument& ia) 
+                {
+                    break;
+                }
+                catch (const std::out_of_range& oor) {
+                    break;
+                }
+                catch (const std::exception& e)
+                {
+                    break;
+                }
+            }
+        }
         ipAddresses.push_back(ipAddress);
     }
     return ipAddresses;
@@ -55,8 +96,19 @@ std::vector<IPAddress> readIPAddresses() {
  * @param ipAddresses 
  */
 void printIPAddresses(const std::vector<IPAddress>& ipAddresses) {
-    for (const auto& ipAddress : ipAddresses) {
-        std::cout << ipAddress.byte1 << "." << ipAddress.byte2 << "." << ipAddress.byte3 << "." << ipAddress.byte4 << std::endl;
+    for (const auto& ipAddress : ipAddresses) 
+    {
+        auto point = 0;
+        for(const auto& byte : ipAddress.content_)
+        {
+            std::cout << byte;
+            if(point < 3)
+            {
+                std::cout << ".";
+            }
+            point++;
+        }    
+        std::cout << std::endl;
     }
 }
 
@@ -71,8 +123,8 @@ void filterAndPrintIPAddresses(const std::vector<IPAddress>& ipAddresses, int by
     std::vector<IPAddress> filteredAddresses;
     std::copy_if(ipAddresses.begin(), ipAddresses.end(), std::back_inserter(filteredAddresses),
                  [byte1, byte2](const IPAddress& ipAddress) {
-                     return (byte1 == -1 || ipAddress.byte1 == byte1) &&
-                            (byte2 == -1 || ipAddress.byte2 == byte2);
+                    return  (byte1 == -1 || ipAddress.content_[0] == byte1) &&
+                            (byte2 == -1 || ipAddress.content_[1] == byte2);
                  });
 
     printIPAddresses(filteredAddresses);
@@ -88,10 +140,10 @@ void filterAndPrintIPAddressesAny(const std::vector<IPAddress>& ipAddresses, int
     std::vector<IPAddress> filteredAddresses;
     std::copy_if(ipAddresses.begin(), ipAddresses.end(), std::back_inserter(filteredAddresses),
                  [byte](const IPAddress& ipAddress) {
-                     return (ipAddress.byte1 == byte) ||
-                            (ipAddress.byte2 == byte) ||
-                            (ipAddress.byte3 == byte) ||
-                            (ipAddress.byte4 == byte);
+                     return (ipAddress.content_[0] == byte) ||
+                            (ipAddress.content_[1] == byte) ||
+                            (ipAddress.content_[2] == byte) ||
+                            (ipAddress.content_[3] == byte);
                  });
 
     printIPAddresses(filteredAddresses);

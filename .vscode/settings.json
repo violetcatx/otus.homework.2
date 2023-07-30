@@ -65,6 +65,8 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "typeindex": "cpp",
-        "typeinfo": "cpp"
-    }
+        "typeinfo": "cpp",
+        "regex": "cpp"
+    },
+    "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }
